@@ -21,18 +21,21 @@
     .file-item:hover { background: #f8f9fa; }
     .file-item::before { content: "📄"; margin-right: 10px; }
     .notice-item::before { content: "📢"; margin-right: 10px; }
+    .file-date { color: #aaa; font-size: 0.75rem; margin-left: 8px; }
     .empty { text-align: center; padding: 40px; color: #999; }
     .loading { text-align: center; padding: 40px; color: #666; }
     .error { text-align: center; padding: 40px; color: #e74c3c; }
     .top-tag { background: #ffd700; color: #1a1a2e; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; margin-left: 8px; font-weight: 600; }
+    .search-hint { font-size: 0.7rem; color: rgba(255,255,255,0.45); margin-top: 6px; }
   </style>
 </head>
 <body>
   <div class="header">
     <h1>📚 Charlie's Cave</h1>
     <div class="search-box">
-      <input type="text" id="searchInput" placeholder="搜索标题..." autocomplete="off">
+      <input type="text" id="searchInput" placeholder="搜索标题或日期（如 2026-08-28）..." autocomplete="off">
     </div>
+    <div class="search-hint">支持按日期搜索：2026-08-28、8月28日、2026年8月</div>
     <div class="tabs">
       <button class="tab-btn active" id="tabDocs" onclick="switchTab('docs')">📄 文档</button>
       <button class="tab-btn" id="tabNotices" onclick="switchTab('notices')">📢 通知</button>
@@ -62,6 +65,59 @@
       });
     }
 
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const day = d.getDate();
+      return y + '-' + (m < 10 ? '0' + m : m) + '-' + (day < 10 ? '0' + day : day);
+    }
+
+    function parseDateQuery(query) {
+      const q = query.trim();
+      let year = null, month = null, day = null;
+      let matched = false;
+
+      const m1 = q.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (m1) { year = parseInt(m1[1]); month = parseInt(m1[2]); day = parseInt(m1[3]); matched = true; }
+
+      if (!matched) {
+        const m2 = q.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+        if (m2) { year = parseInt(m2[1]); month = parseInt(m2[2]); day = parseInt(m2[3]); matched = true; }
+      }
+
+      if (!matched) {
+        const m3 = q.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?$/);
+        if (m3) { year = parseInt(m3[1]); month = parseInt(m3[2]); day = parseInt(m3[3]); matched = true; }
+      }
+
+      if (!matched) {
+        const m4 = q.match(/^(\d{1,2})月(\d{1,2})日?$/);
+        if (m4) { month = parseInt(m4[1]); day = parseInt(m4[2]); matched = true; }
+      }
+
+      if (!matched) {
+        const m5 = q.match(/^(\d{4})年?$/);
+        if (m5) { year = parseInt(m5[1]); matched = true; }
+      }
+
+      if (!matched) {
+        const m6 = q.match(/^(\d{1,2})月$/);
+        if (m6) { month = parseInt(m6[1]); matched = true; }
+      }
+
+      if (!matched) return null;
+      return { year: year, month: month, day: day };
+    }
+
+    function matchesDate(fileDate, dateQuery) {
+      const d = new Date(fileDate);
+      if (dateQuery.year !== null && d.getFullYear() !== dateQuery.year) return false;
+      if (dateQuery.month !== null && (d.getMonth() + 1) !== dateQuery.month) return false;
+      if (dateQuery.day !== null && d.getDate() !== dateQuery.day) return false;
+      return true;
+    }
+
     async function fetchAllFiles(path) {
       const response = await fetch('https://api.github.com/repos/' + USERNAME + '/' + REPO + '/contents/' + path);
       if (!response.ok) throw new Error('Failed');
@@ -69,13 +125,17 @@
       let files = [];
       for (const item of items) {
         if (item.type === 'file' && item.name.toLowerCase().endsWith('.txt')) {
-          files.push({ name: item.name.replace(/\.txt$/i, ''), path: item.path });
+          files.push({
+            name: item.name.replace(/\.txt$/i, ''),
+            path: item.path,
+            date: item.updated_at || item.created_at || ''
+          });
         } else if (item.type === 'dir') {
           try {
             const subFiles = await fetchAllFiles(item.path);
             files = files.concat(subFiles);
           } catch (e) {
-            // 子文件夹读取失败就跳过
+            // 跳过读取失败的子文件夹
           }
         }
       }
@@ -119,7 +179,8 @@
         const isPinned = file.name.indexOf('⭐') === 0;
         const displayName = isPinned ? file.name.substring(2) : file.name;
         const cls = isNotice ? 'file-item notice-item' : 'file-item';
-        html += '<a class="' + cls + '" href="/CharlieCave/reader.html?path=' + encodeURIComponent(file.path) + '">' + escapeHtml(displayName) + (isPinned ? '<span class="top-tag">置顶</span>' : '') + '</a>';
+        const dateStr = file.date ? formatDate(file.date) : '';
+        html += '<a class="' + cls + '" href="/CharlieCave/reader.html?path=' + encodeURIComponent(file.path) + '">' + escapeHtml(displayName) + (isPinned ? '<span class="top-tag">置顶</span>' : '') + (dateStr ? '<span class="file-date">' + dateStr + '</span>' : '') + '</a>';
       });
       container.innerHTML = html;
     }
@@ -139,14 +200,26 @@
     }
 
     document.getElementById('searchInput').addEventListener('input', function(e) {
-      const q = e.target.value.trim().toLowerCase();
+      const q = e.target.value.trim();
       if (!q) {
         if (currentTab === 'docs') { loadDocs(); } else { loadNotices(); }
         return;
       }
-      const results = allItems.filter(function(f) {
-        return f.name.toLowerCase().indexOf(q) !== -1;
-      });
+
+      const dateQuery = parseDateQuery(q);
+      let results;
+
+      if (dateQuery) {
+        results = allItems.filter(function(f) {
+          return f.date && matchesDate(f.date, dateQuery);
+        });
+      } else {
+        const lowerQ = q.toLowerCase();
+        results = allItems.filter(function(f) {
+          return f.name.toLowerCase().indexOf(lowerQ) !== -1;
+        });
+      }
+
       renderList(results, currentTab === 'notices');
     });
 
