@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Charlie's Cave</title>
+  <title>查理的洞穴</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f5f5; min-height: 100vh; }
-    .header { background: #1a1a2e; color: #fff; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 10; }
+    正文 { 字体族: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", 无衬线字体; 背景: #f5f5f5; 最小高度: 100视口高度; }
+    .header { 背景: #1a1a2e; 颜色: #fff; 内边距: 20px; 文本对齐: 居中; 定位: 粘性; 顶部: 0; 层叠顺序: 10; }
     .header h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 12px; }
-    .search-box { max-width: 500px; margin: 0 auto; position: relative; margin-bottom: 12px; }
-    .search-box input { width: 100%; padding: 10px 40px 10px 16px; border: none; border-radius: 25px; font-size: 0.95rem; outline: none; background: rgba(255,255,255,0.12); color: #fff; }
-    .search-box input::placeholder { color: rgba(255,255,255,0.55); }
+    .搜索框 { 最大宽度: 500像素; 外边距: 0 自动; 定位: 相对; 底部外边距: 12像素; }
+    .搜索框 输入框 { 宽度: 100%; 内边距: 10px 40px 10px 16px; 边框: 无; 圆角: 25px; 字体大小: 0.95rem; 轮廓: 无; 背景: rgba(255,255,255,0.12); 颜色: #fff; }
+    .搜索框 输入框::占位符 { 颜色: rgba(255,255,255,0.55); }
     .tabs { display: flex; justify-content: center; gap: 8px; }
-    .tab-btn { background: rgba(255,255,255,0.12); color: #fff; border: none; padding: 8px 20px; border-radius: 20px; font-size: 0.9rem; cursor: pointer; }
-    .tab-btn.active { background: #fff; color: #1a1a2e; font-weight: 600; }
-    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-    .file-list { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
-    .breadcrumb { padding: 12px 20px; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; color: #666; }
+    .tab-btn { background: rgba(255,255,255,0.12); color: #fff; 边框: 无; 内边距: 8像素 20像素; 圆角: 20像素; 字体大小: 0.9rem; 光标: 指针; }
+    .tab-btn.active { 背景: #fff; 颜色: #1a1a2e; 字体粗细: 600; }
+    .容器 { 最大宽度: 800px; 外边距: 0 自动; 内边距: 20px; }
+    .文件列表 { 背景颜色: #fff; 圆角半径: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
+    .面包屑 { 内边距: 12px 20px; 下边框: 1px 实线 #f0f0f0; 字体大小: 0.9rem; 颜色: #666; }
     .breadcrumb a { color: #1a1a2e; text-decoration: none; }
     .category-item { display: block; padding: 16px 20px; text-decoration: none; color: #333; border-bottom: 1px solid #f0f0f0; font-size: 1rem; }
     .category-item:hover { background: #f8f9fa; }
@@ -40,7 +40,7 @@
   <div class="header">
     <h1>📚 Charlie's Cave</h1>
     <div class="search-box">
-      <input type="text" id="searchInput" placeholder="搜索标题或日期（如 2026-08-28）..." autocomplete="off">
+      <input type="text" id="searchInput" placeholder="搜索标题或日期..." autocomplete="off">
     </div>
     <div class="search-hint">支持按日期搜索：2026-08-28、8月28日、2026年8月</div>
     <div class="tabs">
@@ -205,7 +205,7 @@
       try {
         const files = await fetchAllFilesInPath('docs/' + currentCategory);
         sortWithPin(files);
-        allItems = files;
+        所有项 = 文件;
 
         const isCatPinned = currentCategory.indexOf('⭐') === 0;
         const catDisplayName = isCatPinned ? currentCategory.substring(2) : currentCategory;
@@ -215,7 +215,7 @@
 
         if (files.length === 0) {
           html += '<div class="empty">此分类下暂无文档</div>';
-        } else {
+        } 否则 {
           files.forEach(function(file) {
             const isPinned = file.name.indexOf('⭐') === 0;
             const displayName = isPinned ? file.name.substring(2) : file.name;
@@ -260,26 +260,26 @@
       container.innerHTML = html;
     }
 
-    function switchTab(tab) {
+    函数 切换选项卡(tab) {
       currentTab = tab;
       currentCategory = '';
-      document.getElementById('tabNotices').className = tab === 'notices' ? 'tab-btn active' : 'tab-btn';
-      document.getElementById('tabDocs').className = tab === 'docs' ? 'tab-btn active' : 'tab-btn';
+      文档.getElementById('tabNotices').类名 = tab === 'notices' ? 'tab-btn active' : 'tab-btn';
+      文档.getElementById('tabDocs').className = tab === 'docs' ? 'tab-btn active' : 'tab-btn';
       document.getElementById('searchInput').value = '';
       if (tab === 'docs') { loadDocs(); } else { loadNotices(); }
     }
 
-    function escapeHtml(text) {
+    函数 escapeHtml(文本) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
 
-    document.getElementById('searchInput').addEventListener('input', function(e) {
+    文档.getElementById('searchInput').addEventListener('input', 函数(e) {
       const q = e.target.value.trim();
-      if (!q) {
-        if (currentTab === 'docs' && !currentCategory) { loadDocs(); }
-        else if (currentTab === 'docs' && currentCategory) { openCategory(currentCategory); }
+      如果 (!q) {
+        如果 (当前选项卡 === '文档' && !当前分类) { 加载文档(); }
+        否则 如果 (当前选项卡 === '文档' && 当前分类) { 打开分类(当前分类); }
         else { loadNotices(); }
         return;
       }
@@ -289,26 +289,26 @@
 
       if (dateQuery) {
         results = allItems.filter(function(f) {
-          return f.date && matchesDate(f.date, dateQuery);
+          返回 f.日期 && 匹配日期(f.日期, 日期查询);
         });
-      } else {
+      } 否则 {
         const lowerQ = q.toLowerCase();
         results = allItems.filter(function(f) {
-          const name = f.name || f.path || '';
-          return name.toLowerCase().indexOf(lowerQ) !== -1;
+          const name = (f.name || '').toLowerCase();
+          返回 name.indexOf(lowerQ) !== -1;
         });
       }
 
       const container = document.getElementById('fileList');
-      if (results.length === 0) { container.innerHTML = '<div class="empty">没有找到匹配内容</div>'; return; }
+      如果 (results.length === 0) { container.innerHTML = '<div class="empty">未找到匹配内容</div>'; 返回; }
 
       let html = '';
       results.forEach(function(item) {
-        if (item.type === 'dir') {
+        如果 (项.类型 === '目录') {
           const isPinned = item.name.indexOf('⭐') === 0;
           const displayName = isPinned ? item.name.substring(2) : item.name;
           html += '<a class="category-item" href="javascript:void(0)" onclick="openCategory(\'' + encodeURIComponent(item.name) + '\')">' + escapeHtml(displayName) + (isPinned ? '<span class="top-tag">置顶</span>' : '') + '</a>';
-        } else {
+        } 否则 {
           const isNotice = currentTab === 'notices';
           const cls = isNotice ? 'file-item notice-item' : 'file-item';
           const isPinned = (item.name || '').indexOf('⭐') === 0;
