@@ -20,6 +20,7 @@
     .bookmark-btn { background: #1a1a2e; color: #fff; border: none; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; }
     .bookmark-btn:active { background: #333; }
     .bookmark-clear { background: none; color: #999; border: none; font-size: 0.75rem; cursor: pointer; text-decoration: underline; }
+    .auto-indicator { color: #4caf50; font-size: 0.75rem; }
   </style>
 </head>
 <body>
@@ -33,6 +34,7 @@
   <div class="bookmark-bar" id="bookmarkBar" style="display:none;">
     <button class="bookmark-btn" id="bookmarkBtn">🔖 添加书签</button>
     <span id="bookmarkInfo"></span>
+    <span class="auto-indicator" id="autoIndicator">● 自动追踪中</span>
     <button class="bookmark-clear" id="bookmarkClear" style="display:none;" onclick="clearBookmark()">清除书签</button>
   </div>
   <div class="content" id="content">
@@ -43,6 +45,7 @@
     const USERNAME = 'HopeuLive';
     const REPO = 'CharlieCave';
     let currentPath = '';
+    let autoSaveTimer = null;
 
     const FONTS = [
       { name: '宋体', css: '"SimSun", "STSong", "PingFang SC", serif' },
@@ -105,16 +108,25 @@
       return 'bookmark_' + currentPath;
     }
 
-    function saveBookmark() {
+    function getScrollPercent() {
       const scrollPos = window.scrollY;
       const totalHeight = document.body.scrollHeight - window.innerHeight;
-      const percent = totalHeight > 0 ? Math.round((scrollPos / totalHeight) * 100) : 0;
+      return totalHeight > 0 ? Math.round((scrollPos / totalHeight) * 100) : 0;
+    }
+
+    function saveBookmark(percent, time) {
       const bookmark = {
-        percent: percent,
-        time: new Date().toLocaleString('zh-CN')
+        percent: percent !== undefined ? percent : getScrollPercent(),
+        time: time || new Date().toLocaleString('zh-CN')
       };
       localStorage.setItem(getBookmarkKey(), JSON.stringify(bookmark));
       updateBookmarkInfo();
+    }
+
+    function autoSave() {
+      const percent = getScrollPercent();
+      const now = new Date().toLocaleString('zh-CN');
+      saveBookmark(percent, now);
     }
 
     function getBookmark() {
@@ -138,11 +150,11 @@
       const btn = document.getElementById('bookmarkBtn');
       const clearBtn = document.getElementById('bookmarkClear');
       if (bookmark) {
-        info.textContent = '书签位置：' + bookmark.percent + '%（' + bookmark.time + '）';
+        info.textContent = '进度：' + bookmark.percent + '%（' + bookmark.time + '）';
         btn.textContent = '🔖 更新书签';
         clearBtn.style.display = 'inline-block';
       } else {
-        info.textContent = '暂无书签';
+        info.textContent = '暂无进度记录';
         btn.textContent = '🔖 添加书签';
         clearBtn.style.display = 'none';
       }
@@ -192,7 +204,17 @@
       }
     }
 
-    document.getElementById('bookmarkBtn').addEventListener('click', saveBookmark);
+    // 自动追踪：停止滚动 2 秒后保存进度
+    window.addEventListener('scroll', function() {
+      if (!currentPath) return;
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(autoSave, 2000);
+    });
+
+    // 手动添加/更新书签
+    document.getElementById('bookmarkBtn').addEventListener('click', function() {
+      saveBookmark();
+    });
 
     loadFile();
   </script>
