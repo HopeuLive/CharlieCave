@@ -26,7 +26,6 @@
   <div class="topbar">
     <a href="/CharlieCave/" class="back-link">←</a>
     <span class="topbar-title" id="title">加载中...</span>
-    <button class="font-btn" id="fontBtn" onclick="switchFont()">字体</button>
     <button class="font-btn" id="sizeBtn" onclick="switchSize()">字号</button>
     <a id="downloadBtn" class="download-btn" style="display:none;">下载</a>
   </div>
@@ -44,27 +43,11 @@
     const REPO = 'CharlieCave';
     let currentPath = '';
 
-    const FONTS = [
-      { name: '宋体', css: '"SimSun", "STSong", "PingFang SC", serif' },
-      { name: '黑体', css: '"Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif' },
-      { name: '楷体', css: '"KaiTi", "STKaiti", "PingFang SC", sans-serif' },
-      { name: '仿宋', css: '"FangSong", "STFangsong", "PingFang SC", sans-serif' }
-    ];
-
     const SIZES = [
       { name: '中', css: '1rem' },
       { name: '大', css: '1.2rem' },
       { name: '很大', css: '1.4rem' }
     ];
-
-    function getFontIndex() {
-      const saved = localStorage.getItem('reader_font_index');
-      if (saved !== null) {
-        const idx = parseInt(saved);
-        if (idx >= 0 && idx < FONTS.length) return idx;
-      }
-      return 0;
-    }
 
     function getSizeIndex() {
       const saved = localStorage.getItem('reader_size_index');
@@ -75,23 +58,10 @@
       return 0;
     }
 
-    function applyFont() {
-      const idx = getFontIndex();
-      document.getElementById('content').style.fontFamily = FONTS[idx].css;
-      document.getElementById('fontBtn').textContent = FONTS[idx].name;
-    }
-
     function applySize() {
       const idx = getSizeIndex();
       document.getElementById('content').style.fontSize = SIZES[idx].css;
       document.getElementById('sizeBtn').textContent = SIZES[idx].name;
-    }
-
-    function switchFont() {
-      const current = getFontIndex();
-      const next = (current + 1) % FONTS.length;
-      localStorage.setItem('reader_font_index', next);
-      applyFont();
     }
 
     function switchSize() {
@@ -163,7 +133,6 @@
       if (!filePath) { document.getElementById('content').innerHTML = '<div class="error">缺少文件路径</div>'; return; }
       currentPath = filePath;
 
-      applyFont();
       applySize();
       document.getElementById('bookmarkBar').style.display = 'flex';
       updateBookmarkInfo();
