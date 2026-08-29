@@ -7,27 +7,32 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", serif; background: #fdf6e3; min-height: 100vh; }
-    .topbar { background: #1a1a2e; color: #fff; padding: 12px 16px; display: flex; align-items: center; position: sticky; top: 0; z-index: 10; gap: 12px; }
+    .topbar { background: #1a1a2e; color: #fff; padding: 12px 16px; display: flex; align-items: center; position: sticky; top: 0; z-index: 10; gap: 8px; }
     .back-link { color: #fff; text-decoration: none; font-size: 1.2rem; flex-shrink: 0; }
     .topbar-title { font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
-    .download-btn { color: #fff; background: #2d6a4f; text-decoration: none; font-size: 0.85rem; padding: 6px 14px; border-radius: 20px; flex-shrink: 0; }
+    .font-btn { background: rgba(255,255,255,0.12); color: #fff; border: none; padding: 6px 10px; border-radius: 16px; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
+    .font-btn:active { background: rgba(255,255,255,0.25); }
+    .download-btn { color: #fff; background: #2d6a4f; text-decoration: none; font-size: 0.8rem; padding: 6px 12px; border-radius: 20px; flex-shrink: 0; }
     .content { max-width: 700px; margin: 0 auto; padding: 24px 20px; font-size: 1.1rem; line-height: 2; color: #2c2c2c; white-space: pre-wrap; word-wrap: break-word; }
     .loading { text-align: center; padding: 40px; color: #666; }
     .error { text-align: center; padding: 40px; color: #e74c3c; }
     .bookmark-bar { max-width: 700px; margin: 16px auto 0; padding: 0 20px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: #888; flex-wrap: wrap; }
     .bookmark-btn { background: #1a1a2e; color: #fff; border: none; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; }
     .bookmark-btn:active { background: #333; }
+    .bookmark-clear { background: none; color: #999; border: none; font-size: 0.75rem; cursor: pointer; text-decoration: underline; }
   </style>
 </head>
 <body>
   <div class="topbar">
     <a href="/CharlieCave/" class="back-link">←</a>
     <span class="topbar-title" id="title">加载中...</span>
+    <button class="font-btn" id="sizeBtn" onclick="switchSize()">字号</button>
     <a id="downloadBtn" class="download-btn" style="display:none;">下载</a>
   </div>
   <div class="bookmark-bar" id="bookmarkBar" style="display:none;">
     <button class="bookmark-btn" id="bookmarkBtn">🔖 添加书签</button>
     <span id="bookmarkInfo"></span>
+    <button class="bookmark-clear" id="bookmarkClear" style="display:none;" onclick="clearBookmark()">清除书签</button>
   </div>
   <div class="content" id="content">
     <div class="loading">加载中...</div>
@@ -37,6 +42,34 @@
     const USERNAME = 'HopeuLive';
     const REPO = 'CharlieCave';
     let currentPath = '';
+
+    const SIZES = [
+      { name: '中', css: '1rem' },
+      { name: '大', css: '1.2rem' },
+      { name: '很大', css: '1.4rem' }
+    ];
+
+    function getSizeIndex() {
+      const saved = localStorage.getItem('reader_size_index');
+      if (saved !== null) {
+        const idx = parseInt(saved);
+        if (idx >= 0 && idx < SIZES.length) return idx;
+      }
+      return 0;
+    }
+
+    function applySize() {
+      const idx = getSizeIndex();
+      document.getElementById('content').style.fontSize = SIZES[idx].css;
+      document.getElementById('sizeBtn').textContent = SIZES[idx].name;
+    }
+
+    function switchSize() {
+      const current = getSizeIndex();
+      const next = (current + 1) % SIZES.length;
+      localStorage.setItem('reader_size_index', next);
+      applySize();
+    }
 
     function getBookmarkKey() {
       return 'bookmark_' + currentPath;
@@ -48,8 +81,7 @@
       const percent = totalHeight > 0 ? Math.round((scrollPos / totalHeight) * 100) : 0;
       const bookmark = {
         percent: percent,
-        time: new Date().toLocaleString('zh-CN'),
-        preview: document.getElementById('content').textContent.substring(0, 50)
+        time: new Date().toLocaleString('zh-CN')
       };
       localStorage.setItem(getBookmarkKey(), JSON.stringify(bookmark));
       updateBookmarkInfo();
@@ -65,16 +97,24 @@
       }
     }
 
+    function clearBookmark() {
+      localStorage.removeItem(getBookmarkKey());
+      updateBookmarkInfo();
+    }
+
     function updateBookmarkInfo() {
       const bookmark = getBookmark();
       const info = document.getElementById('bookmarkInfo');
       const btn = document.getElementById('bookmarkBtn');
+      const clearBtn = document.getElementById('bookmarkClear');
       if (bookmark) {
-        info.textContent = '上次看到 ' + bookmark.percent + '%（' + bookmark.time + '）';
+        info.textContent = '书签位置：' + bookmark.percent + '%（' + bookmark.time + '）';
         btn.textContent = '🔖 更新书签';
+        clearBtn.style.display = 'inline-block';
       } else {
         info.textContent = '暂无书签';
         btn.textContent = '🔖 添加书签';
+        clearBtn.style.display = 'none';
       }
     }
 
@@ -93,6 +133,7 @@
       if (!filePath) { document.getElementById('content').innerHTML = '<div class="error">缺少文件路径</div>'; return; }
       currentPath = filePath;
 
+      applySize();
       document.getElementById('bookmarkBar').style.display = 'flex';
       updateBookmarkInfo();
 
@@ -115,7 +156,6 @@
         btn.style.display = 'inline-block';
 
         goToBookmark();
-        updateBookmarkInfo();
       } catch (error) {
         document.getElementById('content').innerHTML = '<div class="error">加载失败，请返回重试</div>';
       }
